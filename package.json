@@ -1,0 +1,9 @@
+{
+  "name": "stereovision-studio-3d",
+  "private": true,
+  "type": "module",
+  "description": "Studio web para visualizar, alinear y exportar contenido estereoscópico. Sitio estático: package.json solo define las pruebas.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\""
+  }
+}

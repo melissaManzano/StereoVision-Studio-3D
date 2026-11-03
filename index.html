@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1230" />
+  <meta name="description" content="Studio web para importar, calibrar y visualizar imágenes anaglifo, imágenes SBS y videos SBS 3D, con modo VR para celular." />
+  <title>StereoVision Studio 3D</title>
+  <link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@100,400;100,500;125,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/css/studio.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="./assets/js/main.js"></script>
+</head>
+<body>
+  <div class="app" id="app" data-status="empty">
+    <header class="topbar">
+      <h1 class="wordmark">StereoVision <span>Studio 3D</span></h1>
+
+      <div class="modes" role="group" aria-label="Módulo de visualización">
+        <button type="button" class="mode" data-module="anaglyph" aria-pressed="false">Anaglifo</button>
+        <button type="button" class="mode" data-module="sbs" aria-pressed="false">Imagen SBS</button>
+        <button type="button" class="mode" data-module="video" aria-pressed="false">Video SBS</button>
+        <button type="button" class="mode" data-module="editor" aria-pressed="false">Editor estéreo</button>
+      </div>
+
+      <button type="button" class="btn btn--secondary topbar__vr" id="vrBtn" disabled>Modo VR</button>
+    </header>
+
+    <main class="studio">
+      <section class="panel panel--import" aria-labelledby="importTitle">
+        <h2 id="importTitle">Contenido</h2>
+        <p class="panel__hint" id="importHint">Elige un módulo para habilitar la importación.</p>
+        <div class="import-actions">
+          <button type="button" class="btn btn--primary" id="importBtn" disabled>Importar archivo</button>
+          <button type="button" class="btn btn--secondary" id="sampleBtn" disabled>Abrir muestra</button>
+        </div>
+        <input type="file" id="fileInput" class="visually-hidden" tabindex="-1" aria-label="Seleccionar archivo multimedia" />
+        <p class="panel__formats" id="formats">Formatos: elige un módulo.</p>
+
+        <div class="editor-import" id="editorImport" hidden>
+          <h3>Par izquierdo y derecho</h3>
+          <div class="pick">
+            <button type="button" class="btn btn--secondary" id="pairLeftBtn">Vista izquierda</button>
+            <span class="pick__name" id="pairLeftName">Sin elegir</span>
+          </div>
+          <div class="pick">
+            <button type="button" class="btn btn--secondary" id="pairRightBtn">Vista derecha</button>
+            <span class="pick__name" id="pairRightName">Sin elegir</span>
+          </div>
+
+          <h3>Imagen única</h3>
+          <div class="field">
+            <label for="singleLayout">Disposición</label>
+            <select class="select" id="singleLayout">
+              <option value="auto">Detectar automáticamente</option>
+              <option value="sbs">Lado a lado paralelo</option>
+              <option value="cross">Lado a lado cruzado</option>
+              <option value="tb">Arriba/abajo</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn--secondary" id="singleBtn">Abrir imagen única o MPO</button>
+
+          <h3>Carpeta</h3>
+          <div class="btn-row">
+            <button type="button" class="btn btn--secondary" id="folderBtn">Abrir carpeta</button>
+            <button type="button" class="btn btn--secondary" id="multiBtn">Varios archivos</button>
+          </div>
+          <ol class="pairs" id="pairList" hidden></ol>
+
+          <input type="file" id="pairLeftInput" class="visually-hidden" tabindex="-1" aria-label="Vista izquierda" />
+          <input type="file" id="pairRightInput" class="visually-hidden" tabindex="-1" aria-label="Vista derecha" />
+          <input type="file" id="singleInput" class="visually-hidden" tabindex="-1" aria-label="Imagen única o MPO" />
+          <input type="file" id="folderInput" class="visually-hidden" tabindex="-1" aria-label="Carpeta de pares" webkitdirectory multiple />
+          <input type="file" id="multiInput" class="visually-hidden" tabindex="-1" aria-label="Varios archivos" multiple />
+        </div>
+
+        <dl class="meta" id="fileMeta">
+          <div><dt>Archivo</dt><dd data-meta="name">Sin archivo</dd></div>
+          <div><dt>Formato</dt><dd data-meta="type">Sin datos</dd></div>
+          <div><dt>Tamaño</dt><dd data-meta="size">Sin datos</dd></div>
+          <div><dt>Resolución</dt><dd data-meta="resolution">Sin datos</dd></div>
+          <div><dt>Disposición</dt><dd data-meta="layout">Sin datos</dd></div>
+          <div><dt>Duración</dt><dd data-meta="duration">Sin datos</dd></div>
+          <div><dt>Memoria GPU</dt><dd data-meta="gpu">Sin datos</dd></div>
+        </dl>
+
+        <button type="button" class="btn btn--quiet" id="closeBtn" disabled>Cerrar archivo</button>
+      </section>
+
+      <section class="viewer" aria-label="Área de visualización">
+        <div class="alert" id="alert" role="alert" hidden>
+          <div class="alert__body">
+            <p class="alert__title" id="alertTitle"></p>
+            <p class="alert__detail" id="alertDetail"></p>
+          </div>
+          <button type="button" class="btn btn--quiet alert__close" id="alertClose">Entendido</button>
+        </div>
+
+        <div class="stage" id="stage" data-render="none">
+          <div class="stage__empty" id="emptyState">
+            <p class="stage__title" id="emptyTitle">Elige un módulo</p>
+            <p class="stage__text" id="emptyText">Anaglifo, Imagen SBS, Video SBS o Editor estéreo. Después importa un archivo desde tu equipo o arrástralo aquí.</p>
+          </div>
+          <div class="stage__eyes" aria-hidden="true">
+            <span class="stage__eye" id="eyeLabelLeft">Ojo izquierdo</span>
+            <span class="stage__eye" id="eyeLabelRight">Ojo derecho</span>
+          </div>
+          <div class="stage__divider" aria-hidden="true"></div>
+
+          <button type="button" class="vr-exit" id="vrExit">Salir de VR</button>
+          <p class="vr-tap" id="vrTap">Toca la pantalla para reproducir o pausar</p>
+          <div class="vr-rotate" id="vrRotate">
+            <p class="stage__title">Gira el teléfono a horizontal</p>
+            <p class="stage__text">Cada ojo necesita la mitad de la pantalla. Colócalo en las gafas con el borde izquierdo hacia tu ojo izquierdo.</p>
+          </div>
+        </div>
+
+        <div class="transport" id="transport" hidden>
+          <button type="button" class="btn btn--icon" id="playBtn" aria-label="Reproducir" disabled>
+            <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+          </button>
+          <button type="button" class="btn btn--icon" id="backBtn" aria-label="Retroceder 10 segundos" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6 4 12l7 6zM20 6l-7 6 7 6z" /></svg>
+          </button>
+          <button type="button" class="btn btn--icon" id="fwdBtn" aria-label="Adelantar 10 segundos" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 6 7 6-7 6zM4 6l7 6-7 6z" /></svg>
+          </button>
+          <span class="transport__time num" id="timeCurrent">0:00</span>
+          <input type="range" class="range transport__seek" id="seek" min="0" max="0" step="0.05" value="0" aria-label="Posición del video" disabled />
+          <span class="transport__time num" id="timeTotal">0:00</span>
+          <button type="button" class="btn btn--icon" id="muteBtn" aria-label="Silenciar" aria-pressed="false" disabled>
+            <svg class="i-sound" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" /></svg>
+            <svg class="i-muted" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6" /></svg>
+          </button>
+          <input type="range" class="range transport__volume" id="volume" min="0" max="100" step="1" value="80" aria-label="Volumen" disabled />
+        </div>
+
+        <div class="statusbar">
+          <span class="statusbar__state" id="statusState">Sin archivo</span>
+          <span class="statusbar__msg" id="statusMsg" role="status" aria-live="polite">Elige un módulo para comenzar.</span>
+        </div>
+      </section>
+
+      <section class="panel panel--tools" aria-labelledby="toolsTitle">
+        <h2 id="toolsTitle">Ajustes</h2>
+        <p class="panel__hint" id="toolsHint">Los ajustes se activan cuando hay un archivo abierto.</p>
+        <div class="controls" id="controls"></div>
+        <div class="tools-actions">
+          <button type="button" class="btn btn--secondary" id="resetBtn" disabled>Restablecer</button>
+          <button type="button" class="btn btn--quiet" id="exportBtn" disabled>Exportar calibración</button>
+        </div>
+        <p class="panel__note" id="toolsNote">Los ajustes cambian solo la vista; el archivo original no se modifica.</p>
+      </section>
+    </main>
+  </div>
+
+  <noscript>
+    <p class="noscript">StereoVision Studio 3D necesita JavaScript y WebGL. Actívalos y abre el sitio desde HTTP o HTTPS.</p>
+  </noscript>
+</body>
+</html>
