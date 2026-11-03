@@ -258,8 +258,9 @@ Es el cuarto módulo del Studio. Toma un par de fotografías y les aplica en la 
    - *Abrir carpeta*.
    - Arrastrar uno o dos archivos al visor.
    - *Abrir muestra*.
+   Con una imagen única abierta, cambiar *Disposición* (automática, paralelo, cruzado, arriba/abajo) la vuelve a separar al momento.
 2. En *Vista previa* elige **Mezcla** o **Diferencia** y pulsa **Alinear automáticamente**. El informe muestra los puntos, las coincidencias, la corrección aplicada y el error vertical antes y después.
-3. Afina arrastrando sobre el visor o con las flechas (Shift: 10 px). El movimiento horizontal ajusta el paralaje y el vertical, el desnivel.
+3. Afina con **Desplazamiento horizontal** y **Desnivel vertical** (paso 1), arrastrando sobre el visor o con las flechas (Shift: 10 px). La alineación automática no cambia el desplazamiento horizontal, porque esa diferencia es la profundidad; para fijarlo automáticamente usa *Montaje en ventana*.
 4. Aplica **Recorte automático**, **Montaje en ventana** e **Igualar color**; luego elige el modo de salida y pulsa **Exportar**.
 5. Con una carpeta cargada aparece **Procesar N pares**. Aplica la receta actual y, si los eliges, la alineación, el recorte, la ventana y el color automáticos. Descarga un ZIP con un `informe.txt`.
 

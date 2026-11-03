@@ -12,8 +12,9 @@ const IMAGE_OR_MPO = /\.(jpe?g|png|webp|mpo)$/i;
  * par izquierdo/derecho, imagen única o MPO, y carpeta con emparejado automático.
  * También ejecuta el procesamiento por lotes sobre los pares de la carpeta.
  */
-export function createLibrary({ el, load, worker, renderer, ui }) {
+export function createLibrary({ el, load, worker, renderer, ui, currentMedia }) {
   let pendingLeft = null;
+  let lastSingle = null; // imagen única abierta: permite separarla de nuevo al cambiar la disposición
   let pendingRight = null;
   let entries = [];
   let activeIndex = -1;
@@ -31,12 +32,14 @@ export function createLibrary({ el, load, worker, renderer, ui }) {
   }
 
   function openPair(left, right) {
+    lastSingle = null;
     activeIndex = -1;
     renderList();
     return load(() => loadPair(left, right, { maxSize: maxSize() }), `${left.name} + ${right.name}`);
   }
 
   function openSingle(file) {
+    lastSingle = isMpo(file) ? null : file;
     activeIndex = -1;
     renderList();
     return load(() => loadSingle(file, el.singleLayout.value, { worker, maxSize: maxSize() }), file.name);
@@ -69,6 +72,7 @@ export function createLibrary({ el, load, worker, renderer, ui }) {
       if (i === activeIndex) btn.setAttribute('aria-current', 'true');
       btn.addEventListener('click', () => {
         activeIndex = i;
+        lastSingle = entry.single && !isMpo(entry.single) ? entry.single : null;
         renderList();
         load(entryLoader(entry), entry.name);
       });
@@ -114,6 +118,20 @@ export function createLibrary({ el, load, worker, renderer, ui }) {
   pick(el.folderInput, setFolder);
   pick(el.multiInput, setFolder);
   if (!('webkitdirectory' in el.folderInput)) el.folderBtn.hidden = true;
+
+  // Cambiar la disposición con una imagen única abierta la vuelve a separar en dos vistas.
+  el.singleLayout.addEventListener('change', () => {
+    const media = currentMedia();
+    const label = el.singleLayout.selectedOptions[0].textContent.toLowerCase();
+    if (lastSingle && media?.kind === 'pair' && media.name === lastSingle.name) {
+      const file = lastSingle;
+      load(() => loadSingle(file, el.singleLayout.value, { worker, maxSize: maxSize() }), `${file.name} (${label})`);
+    } else if (media?.kind === 'pair') {
+      ui.message(`La disposición solo aplica a imágenes únicas; el contenido actual ya son dos vistas. Se usará "${label}" en la próxima imagen única.`);
+    } else {
+      ui.message(`Disposición "${label}": se aplicará a la próxima imagen única que abras.`);
+    }
+  });
 
   /**
    * Procesamiento por lotes: para cada par aplica las operaciones elegidas sobre una copia

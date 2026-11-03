@@ -33,7 +33,7 @@ function init() {
 
   // Editor estéreo: un Web Worker para el procesamiento pesado y la entrada de pares.
   const worker = createWorkerClient();
-  const library = createLibrary({ el: el.editor, load: session.load, worker, renderer: stage.renderer, ui });
+  const library = createLibrary({ el: el.editor, load: session.load, worker, renderer: stage.renderer, ui, currentMedia: () => store.get().media });
   session.attachEditor({ worker, library });
 
   const vr = createVR({

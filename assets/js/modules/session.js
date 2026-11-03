@@ -4,13 +4,14 @@ import { createAnaglyphView } from './anaglyph.js';
 import { createSbsImageView, detectLayout } from './sbs.js';
 import { createVideoView } from './video.js';
 import { createEditorView } from './editor/editor-view.js';
-import { loadSingle } from './editor/sources.js';
 
 /**
  * Sesión de contenido: un solo archivo activo a la vez (RN-05).
  * Coordina importación → vista → calibración, sustituye el archivo anterior
  * liberando texturas, geometrías, URLs temporales y reproducción.
  */
+const PAIR_LAYOUT = { sbs: 'Lado a lado paralelo', cross: 'Lado a lado cruzado', tb: 'Arriba/abajo', par: 'Dos archivos', mpo: 'MPO' };
+
 export function createSession({ store, stage, ui, calibration }) {
   let editor = null;  // { worker, library } del editor estéreo, conectado desde main.js
   let media = null;   // archivo decodificado activo
@@ -51,7 +52,8 @@ export function createSession({ store, stage, ui, calibration }) {
     if (!view) return;
     view.update(values);
     ui.renderEyes(Boolean(values.swap));
-    ui.renderLayout(detected ? values.layout : null, detected);
+    if (media?.kind === 'pair') ui.el.meta.layout.textContent = PAIR_LAYOUT[media.layout] ?? 'Par';
+    else ui.renderLayout(detected ? values.layout : null, detected);
   }
 
   function selectModule(id) {
@@ -149,7 +151,7 @@ export function createSession({ store, stage, ui, calibration }) {
     if (!module) return;
     try {
       const file = await fetchSample(module.sample);
-      if (module.id === 'editor') await load(() => loadSingle(file, 'auto', { worker: editor.worker, maxSize: stage.renderer.capabilities.maxTextureSize }), file.name);
+      if (module.id === 'editor') await editor.library.openSingle(file); // respeta la disposición elegida
       else await open(file);
     } catch (err) {
       fail(err);
