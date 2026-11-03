@@ -42,6 +42,12 @@
         <div class="import-actions">
           <button type="button" class="btn btn--primary" id="importBtn" disabled>Importar archivo</button>
           <button type="button" class="btn btn--secondary" id="sampleBtn" disabled>Abrir muestra</button>
+          <button type="button" class="btn btn--secondary" id="historyBtn" aria-expanded="false" aria-controls="recentPanel" disabled>Historial</button>
+        </div>
+        <div class="recents" id="recentPanel" hidden>
+          <p class="panel__hint" id="recentEmpty">Aún no hay cargas en este módulo. El historial guarda tus últimas 5 cargas con sus ajustes mientras no recargues la página.</p>
+          <ol class="recents__list" id="recentList"></ol>
+          <button type="button" class="btn btn--quiet" id="recentClear">Vaciar historial de este módulo</button>
         </div>
         <input type="file" id="fileInput" class="visually-hidden" tabindex="-1" aria-label="Seleccionar archivo multimedia" />
         <p class="panel__formats" id="formats">Formatos: elige un módulo.</p>

@@ -14,6 +14,7 @@ export const OUTPUT_MODES = Object.freeze([
   { id: 'sbs', label: 'Lado a lado paralelo', group: 'Pares', layout: 'sbs' },
   { id: 'cross', label: 'Lado a lado cruzado', group: 'Pares', layout: 'sbs' },
   { id: 'tb', label: 'Arriba/abajo', group: 'Pares', layout: 'tb' },
+  { id: 'cardboard', label: 'Cardboard (lado a lado con lente)', group: 'Pares', layout: 'sbs' },
   { id: 'rows', label: 'Entrelazado por filas', group: 'Entrelazado' },
   { id: 'cols', label: 'Entrelazado por columnas', group: 'Entrelazado' },
   { id: 'wiggle', label: 'Wiggle (alternar vistas)', group: 'Animado' },
@@ -41,6 +42,7 @@ export function defaultRecipe() {
     color: { lut: null, brightness: 0, contrast: 0, gamma: 1, saturation: 0, sharpness: 0 },
     pairRotation: 0,      // rotación fina de ambas vistas, en grados
     resize: 100,          // tamaño de exportación, en %
+    lens: { strength: 100, chroma: true }, // predistorsión del modo Cardboard
     output: 'dubois',
   };
 }

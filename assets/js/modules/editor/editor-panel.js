@@ -79,6 +79,14 @@ export function createEditorPanel(container, ctx) {
     return { row: el('div', { className: 'field' }, el('label', { htmlFor: id, textContent: label }), node), node };
   }
 
+  function checkbox({ path, label }) {
+    const id = `ed-${++uid}`;
+    const input = el('input', { type: 'checkbox', id, className: 'check' });
+    input.addEventListener('change', () => { set(ctx.getRecipe(), path, input.checked); ctx.preview(); ctx.commit(label); });
+    bindings.push({ sync(recipe) { input.checked = Boolean(get(recipe, path)); } });
+    return el('div', { className: 'check-row' }, input, el('label', { htmlFor: id, textContent: label }));
+  }
+
   function step(n, title, open, ...content) {
     return el('details', { className: 'step', open }, el('summary', { textContent: `${n}. ${title}` }), el('div', { className: 'step__body' }, ...content));
   }
@@ -208,6 +216,8 @@ export function createEditorPanel(container, ctx) {
       step(6, 'Salida', true,
         select({ path: 'output', label: 'Modo de salida', options: OUTPUT_MODES }).row,
         help('La vista previa muestra el modo elegido en vivo.'),
+        range({ path: 'lens.strength', label: 'Distorsión de lente (Cardboard)', min: 0, max: 150, step: 5, unit: '%', help: 'Solo en la salida Cardboard: predistorsión de barril que compensan las lentes del visor; 100 % corresponde al Google Cardboard. También se aplica en el modo VR.' }),
+        checkbox({ path: 'lens.chroma', label: 'Corrección cromática' }),
       ),
       step(7, 'Exportar', true, formatSel.row, jpegWarn, exportBtn, el('div', { className: 'field' }, el('label', { htmlFor: delayId, textContent: 'Velocidad del wiggle' }), delayOut, delayInput), gifBtn, batchBox),
     ),

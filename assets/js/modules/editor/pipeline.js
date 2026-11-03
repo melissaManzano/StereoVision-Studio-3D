@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { ANAGLYPH_MODES } from '../../processing/anaglyph.js';
 import { rightHomography, rotationAbout, invert3, multiply3 } from '../../processing/align.js';
-import { orientedSize, outputLayout } from './recipe.js';
+import { orientedSize, outputLayout, defaultRecipe } from './recipe.js';
+import { LENS_GLSL, lensCoefficients } from '../lens.js';
 
 /**
  * Pipeline de GPU del editor estéreo. Dos pasadas por render:
@@ -81,6 +82,7 @@ const EYE_FRAGMENT = /* glsl */ `
 `;
 
 const COMPOSE_FRAGMENT = /* glsl */ `
+  ${LENS_GLSL}
   uniform sampler2D L;
   uniform sampler2D R;
   uniform int mode;
@@ -115,6 +117,12 @@ const COMPOSE_FRAGMENT = /* glsl */ `
     } else if (mode == 5) {
       float col = floor(uv.x * outSize.x);
       c = mod(col, 2.0) < 1.0 ? texture2D(L, uv).rgb : texture2D(R, uv).rgb;
+    } else if (mode == 10) {
+      // Cardboard: lado a lado con predistorsión de barril en cada mitad.
+      bool first = uv.x < 0.5;
+      vec2 e = vec2(first ? uv.x * 2.0 : uv.x * 2.0 - 1.0, uv.y);
+      float a = (outSize.x * 0.5) / outSize.y;
+      c = first ? lensSample(L, e, a) : lensSample(R, e, a);
     } else if (mode == 6) {
       c = texture2D(L, uv).rgb;
     } else if (mode == 7) {
@@ -129,7 +137,7 @@ const COMPOSE_FRAGMENT = /* glsl */ `
   }
 `;
 
-const MODE_CODES = { sbs: 1, cross: 2, tb: 3, rows: 4, cols: 5, left: 6, right: 7, overlay: 8, difference: 9 };
+const MODE_CODES = { sbs: 1, cross: 2, tb: 3, rows: 4, cols: 5, left: 6, right: 7, overlay: 8, difference: 9, cardboard: 10 };
 const matrix = (arr) => new THREE.Matrix3().set(...arr);
 
 export function createPipeline(renderer) {
@@ -166,6 +174,7 @@ export function createPipeline(renderer) {
       L: { value: null }, R: { value: null }, mode: { value: 0 },
       ML: { value: new THREE.Matrix3() }, MR: { value: new THREE.Matrix3() }, linearize: { value: 0 },
       outSize: { value: new THREE.Vector2() },
+      lensK: { value: new THREE.Vector2() }, lensChroma: { value: 1 },
     },
   });
 
@@ -245,8 +254,10 @@ export function createPipeline(renderer) {
     renderer.render(scene, camera);
   }
 
-  function compose(modeId, rtL, rtR, rt, outW, outH) {
+  function compose(modeId, rtL, rtR, rt, outW, outH, lens = defaultRecipe().lens) {
     const u = composeMaterial.uniforms;
+    u.lensK.value.set(...lensCoefficients(lens.strength));
+    u.lensChroma.value = lens.chroma ? 1 : 0;
     u.L.value = rtL.texture;
     u.R.value = rtR.texture;
     u.outSize.value.set(outW, outH);
@@ -302,7 +313,7 @@ export function createPipeline(renderer) {
       renderEye(recipe, f, 'right', rtR);
       const out = outputSize(modeId, w, h);
       const rt = target('previewOut', out.width, out.height);
-      compose(modeId, rtL, rtR, rt, out.width, out.height);
+      compose(modeId, rtL, rtR, rt, out.width, out.height, recipe.lens);
       renderer.setRenderTarget(null);
       return { texture: rt.texture, width: out.width, height: out.height, eyes: [rtL.texture, rtR.texture], eyeWidth: w, eyeHeight: h, frame: f };
     },
@@ -323,7 +334,7 @@ export function createPipeline(renderer) {
       renderEye(recipe, f, 'right', rtR);
       const out = outputSize(modeId, ew, eh);
       const rt = target('exportOut', out.width, out.height);
-      compose(modeId, rtL, rtR, rt, out.width, out.height);
+      compose(modeId, rtL, rtR, rt, out.width, out.height, recipe.lens);
       const image = readTarget(rt, out.width, out.height);
       renderer.setRenderTarget(null);
       // Las texturas de exportación pueden ser enormes: se liberan enseguida.

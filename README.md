@@ -102,6 +102,8 @@ StereoVision-Studio-3D/
 │           ├── calibration.js  Panel de calibración por esquema, restablecer
 │           ├── vr.js           Modo Viewer/VR, pantalla completa, orientación
 │           ├── ui.js           Presentación: estados, mensajes, habilitar controles
+│           ├── recents.js      Historial de cargas: referencias y ajustes por módulo
+│           ├── lens.js         Predistorsión de lente Cardboard (shader compartido)
 │           └── editor/
 │               ├── pipeline.js     GPU: deformación, recorte, color y modos de salida (shaders)
 │               ├── editor-view.js  Vista previa, historial, arrastre y teclado
@@ -166,8 +168,9 @@ Se necesita conexión a Internet para cargar Three.js (jsDelivr) y la fuente Mon
 1. **Elige un módulo** en la barra superior: Anaglifo, Imagen SBS o Video SBS (RN-01). Hasta entonces, la importación y los ajustes están deshabilitados.
 2. **Importa** con *Importar archivo*, arrastra el archivo al visor o usa *Abrir muestra*.
 3. **Ajusta** en el panel *Ajustes*. Cada cambio se ve al instante y el valor aparece junto a su control. *Restablecer* vuelve a los valores iniciales.
-4. **Video:** reproduce siempre con un toque o clic (los navegadores móviles lo exigen). Puedes ajustar el desplazamiento y la escala mientras el video avanza.
-5. **Modo VR** (Imagen SBS y Video SBS): gira el teléfono a horizontal y colócalo en las gafas. En video, tocar la pantalla reproduce o pausa. *Salir de VR* (botón superior) o `Esc` devuelven al Studio con el mismo archivo y los mismos ajustes.
+4. **Historial:** el botón *Historial* del panel *Contenido* lista las últimas 5 cargas del módulo activo, con la hora y un resumen de sus ajustes. Al elegir una, se vuelve a abrir con esos ajustes (en video, en el mismo segundo y en pausa; en el editor, con su receta completa). Solo guarda la referencia al archivo y los ajustes, nunca la imagen cargada, y se pierde al recargar la página. Cambiar de módulo sigue cerrando el archivo actual (RN-05).
+5. **Video:** reproduce siempre con un toque o clic (los navegadores móviles lo exigen). Puedes ajustar el desplazamiento y la escala mientras el video avanza.
+6. **Modo VR** (Imagen SBS y Video SBS): gira el teléfono a horizontal y colócalo en las gafas. En video, tocar la pantalla reproduce o pausa. *Salir de VR* (botón superior) o `Esc` devuelven al Studio con el mismo archivo y los mismos ajustes.
 
 | Control | Módulo | Rango | Inicial |
 |---|---|---|---|
@@ -178,6 +181,7 @@ Se necesita conexión a Internet para cargar Three.js (jsDelivr) y la fuente Mon
 | Alineación vertical | SBS, video | −30 a +30 px | 0 px |
 | Escala | SBS, video | 50 a 200 % | 100 % |
 | Intercambiar ojos | SBS, video | sí / no | no |
+| Corrección de lente Cardboard | SBS, video | sí / no; distorsión 0 a 150 %; corrección cromática | no; 100 %; sí |
 | Disposición SBS | SBS, video | Full / Half | detectada al importar (proporción ≥ 2,4:1 → Full) |
 
 El desplazamiento horizontal está **limitado a ±40 px** a propósito: más separación obligaría a los ojos a divergir y produciría visión doble.
@@ -216,6 +220,7 @@ Es el cuarto módulo del Studio. Toma un par de fotografías y les aplica en la 
 | 3 | Redimensionar (tamaño de exportación) y rotar el par (ajuste fino y 90°) | Hecho | receta `resize`, `pairRotation`, `orientation` |
 | 3 | Medio color, Dubois, ámbar/azul y verde/magenta | Hecho | `anaglyph.js` |
 | 3 | Lado a lado paralelo y cruzado, arriba/abajo, entrelazado por filas y por columnas | Hecho | shader de composición |
+| Extra | Salida Cardboard: lado a lado con predistorsión de barril y corrección cromática, exportable y aplicada en VR | Hecho | `lens.js` |
 | 4 | Wiggle: vista previa alternada y exportación en GIF animado | Hecho | `encodeGIF` |
 | 4 | Emparejado automático de carpeta por nombre | Hecho | `pairing.js` |
 | 4 | Procesamiento por lotes con ZIP e informe | Hecho | `library.runBatch` |
@@ -241,6 +246,7 @@ Es el cuarto módulo del Studio. Toma un par de fotografías y les aplica en la 
 | `extractMpoImages` | `mpo.js` | Lee el índice MP Entry (etiqueta 0xB002) del segmento APP2 "MPF"; si falta, busca los marcadores FF D8 FF. |
 | `pairFiles` | `pairing.js` | Reconoce sufijos `_L/_R`, `-izq/-der` y `left/right`, archivos SBS o MPO, y la numeración consecutiva de las cámaras. |
 | `encodeTIFF` / `encodeGIF` / `createZip` | `encoders.js` | TIFF baseline RGB sin compresión; GIF89a con paleta por corte de mediana y compresión LZW; ZIP sin compresión con CRC-32. |
+| `lensSample` (GLSL) | `lens.js` | Predistorsión de barril para las lentes del Cardboard con el modelo radial de Brown: p_origen = p·(1 + k1·r² + k2·r⁴), con k1 = 0,441 y k2 = 0,156 al 100 %. La corrección cromática muestrea rojo y azul con un radio ±0,6 % distinto. En Imagen SBS y Video SBS cada ojo se dibuja en una textura y se copia a su región con este shader. |
 | Pipeline de GPU | `pipeline.js` | Pasada por ojo (matriz inversa → giro de 90° → UV; nitidez por máscara de enfoque, LUT, brillo, contraste, gamma, saturación y ventana flotante) y pasada de composición del modo de salida. |
 
 ### Rendimiento: nada pesado bloquea la interfaz
@@ -290,7 +296,7 @@ Hay 21 pruebas:
 | RN-02 | `importer.js` valida extensión y MIME y decodifica antes de mostrar. |
 | RN-03 | Imágenes: JPG/JPEG, PNG, WebP. Video: MP4 (`canPlayType` y decodificación real). |
 | RN-04 | Avisos con título y sugerencia; el Studio sigue operativo y conserva el contenido anterior si existía. |
-| RN-05 | `session.js` libera el archivo anterior antes de montar el nuevo; se comprueba con *Memoria GPU*. |
+| RN-05 | `session.js` libera el archivo anterior antes de montar el nuevo; se comprueba con *Memoria GPU*. El *Historial* solo guarda referencias y ajustes; restaurar vuelve a abrir el archivo y libera el actual. |
 | RN-06 | Controles deshabilitados (atributo `disabled`) y mensajes en el visor y los paneles cuando no hay contenido. |
 | RN-07 | Todo ocurre en la GPU (UV, shader, transformaciones); el archivo nunca se escribe. |
 | RN-08 | Al importar se reconstruye la calibración con sus valores iniciales. |

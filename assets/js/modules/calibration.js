@@ -14,6 +14,10 @@ const STEREO = [
   { key: 'layout', type: 'select', label: 'Disposición SBS', value: 'full',
     options: [['full', 'Completo (Full SBS)'], ['half', 'Comprimido (Half SBS)']],
     help: 'Se detecta al importar; Half SBS recupera la proporción de cada ojo.' },
+  { key: 'lens', type: 'toggle', label: 'Corrección de lente Cardboard', value: false },
+  { key: 'lensStrength', type: 'range', label: 'Distorsión de lente', min: 0, max: 150, step: 5, unit: '%', value: 100,
+    help: 'Predistorsión de barril para las lentes del visor; 100 % corresponde al Google Cardboard.' },
+  { key: 'lensChroma', type: 'toggle', label: 'Corrección cromática', value: true },
 ];
 
 export const SCHEMAS = Object.freeze({
@@ -105,6 +109,12 @@ export function createCalibration(container, { onChange }) {
     /** Vuelve a los valores iniciales del módulo y del archivo (RN-10). */
     reset() {
       values = { ...defaults };
+      schema.forEach((f) => sync(f.key));
+      emit();
+    },
+    /** Aplica valores guardados (historial de cargas); Restablecer sigue volviendo a los iniciales. */
+    restore(saved) {
+      for (const f of schema) if (saved && f.key in saved) values[f.key] = saved[f.key];
       schema.forEach((f) => sync(f.key));
       emit();
     },

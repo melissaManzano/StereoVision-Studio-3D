@@ -36,7 +36,7 @@ export function createEditorView(stage, media, ctx) {
   pipeline.setSources(media.left, media.right);
 
   let recipe = defaultRecipe();
-  const history = createHistory(recipe);
+  let history = createHistory(recipe);
   let previewMode = 'output';
   let analysis = null;
   let lastReport = null;
@@ -133,9 +133,15 @@ export function createEditorView(stage, media, ctx) {
     }
   }
 
+  /** En VR, la salida Cardboard también aplica la lente al visor. */
+  function updateLens() {
+    stage.setLens(vr && recipe.output === 'cardboard' ? recipe.lens : null);
+  }
+
   function sync() {
     panel.sync(recipe, { canUndo: history.canUndo(), canRedo: history.canRedo(), outputSize: exportSize() });
     updateWiggle();
+    updateLens();
   }
 
   function commit(label) {
@@ -355,6 +361,15 @@ export function createEditorView(stage, media, ctx) {
       panel.showReport([]);
       commit('Editor restablecido');
     },
+    snapshot() { return { recipe: clone(recipe) }; },
+    /** Restaura una receta del historial de cargas; deshacer empieza desde ella. */
+    restore({ recipe: saved }) {
+      if (!saved) return;
+      const full = { ...defaultRecipe(), ...clone(saved) };
+      history = createHistory(full);
+      analysis = null;
+      setRecipe(full);
+    },
     describe() {
       const { color, ...rest } = recipe;
       return {
@@ -380,9 +395,11 @@ export function createEditorView(stage, media, ctx) {
         stage.setMode('single');
       }
       updateWiggle();
+      updateLens();
       invalidate();
     },
     dispose() {
+      stage.setLens(null);
       listeners.abort();
       clearInterval(wiggleTimer);
       clearTimeout(keyTimer);

@@ -6,6 +6,7 @@ import { createSession } from './modules/session.js';
 import { createVR } from './modules/vr.js';
 import { createWorkerClient } from './modules/editor/worker-client.js';
 import { createLibrary } from './modules/editor/library.js';
+import { summarize } from './modules/recents.js';
 
 /** Inicialización: crea los módulos y conecta los eventos de la interfaz. */
 function init() {
@@ -48,6 +49,24 @@ function init() {
     },
     onTap: () => session.togglePlayback(),
     notify: ui.message,
+  });
+
+  // Historial de cargas: referencias y ajustes en memoria, nunca contenido cargado (RN-05).
+  const renderRecents = () => {
+    const moduleId = store.get().module;
+    ui.renderRecents(session.recents.list(moduleId), moduleId, (entry) => session.restoreEntry(entry), summarize);
+  };
+  session.recents.onChange(renderRecents);
+  store.subscribe((state, prev) => { if (state.module !== prev.module) renderRecents(); });
+  el.historyBtn.addEventListener('click', () => {
+    const open = el.recentPanel.hidden;
+    if (open) session.captureNow();
+    el.recentPanel.hidden = !open;
+    el.historyBtn.setAttribute('aria-expanded', String(open));
+  });
+  el.recentClear.addEventListener('click', () => {
+    session.recents.clear(store.get().module);
+    ui.message('Historial de este módulo vaciado. El archivo abierto no se cierra.');
   });
 
   el.modes.forEach((button) => button.addEventListener('click', () => session.selectModule(button.dataset.module)));

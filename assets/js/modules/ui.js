@@ -25,6 +25,11 @@ export function createUI(doc = document) {
     vrBtn: $('vrBtn'),
     importBtn: $('importBtn'),
     sampleBtn: $('sampleBtn'),
+    historyBtn: $('historyBtn'),
+    recentPanel: $('recentPanel'),
+    recentList: $('recentList'),
+    recentEmpty: $('recentEmpty'),
+    recentClear: $('recentClear'),
     closeBtn: $('closeBtn'),
     fileInput: $('fileInput'),
     importHint: $('importHint'),
@@ -122,6 +127,8 @@ export function createUI(doc = document) {
 
     el.importBtn.disabled = !module || busy;
     el.sampleBtn.disabled = !module || busy;
+    el.historyBtn.disabled = !module || busy;
+    el.recentList.querySelectorAll('button').forEach((b) => { b.disabled = busy; });
     el.importBtn.setAttribute('aria-busy', String(busy));
     el.closeBtn.disabled = !hasContent || busy;
     el.vrBtn.disabled = !hasContent || !module?.vr;
@@ -188,5 +195,30 @@ export function createUI(doc = document) {
     el.statusState.textContent = state.vr ? `${STATUS_LABEL[state.status]} en VR` : STATUS_LABEL[state.status];
   }
 
-  return { el, render, renderMeta, renderLayout, renderGpu, renderEyes, message, showError, hideError };
+  const clock = (d) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+
+  /** Lista del historial de cargas del módulo activo. */
+  function renderRecents(entries, moduleId, onPick, summarize) {
+    el.historyBtn.textContent = entries.length ? `Historial (${entries.length})` : 'Historial';
+    el.recentEmpty.hidden = entries.length > 0;
+    el.recentClear.hidden = entries.length === 0;
+    el.recentList.replaceChildren(...entries.map((entry) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'recent';
+      const name = document.createElement('span');
+      name.className = 'recent__name';
+      name.textContent = entry.name;
+      const meta = document.createElement('span');
+      meta.className = 'recent__meta';
+      meta.textContent = `${clock(entry.time)}, ${summarize(moduleId, entry.settings)}`;
+      btn.append(name, meta);
+      btn.addEventListener('click', () => onPick(entry));
+      const li = document.createElement('li');
+      li.append(btn);
+      return li;
+    }));
+  }
+
+  return { el, render, renderMeta, renderRecents, renderLayout, renderGpu, renderEyes, message, showError, hideError };
 }

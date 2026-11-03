@@ -4,6 +4,7 @@ import { createAnaglyphView } from './anaglyph.js';
 import { createSbsImageView, detectLayout } from './sbs.js';
 import { createVideoView } from './video.js';
 import { createEditorView } from './editor/editor-view.js';
+import { createRecents } from './recents.js';
 
 /**
  * Sesión de contenido: un solo archivo activo a la vez (RN-05).
@@ -18,10 +19,24 @@ export function createSession({ store, stage, ui, calibration }) {
   let view = null;    // visor del módulo (anaglifo, SBS o video)
   let detected = null;
   let request = 0;    // descarta resultados de cargas que fueron reemplazadas
+  let current = null; // entrada del historial de cargas que corresponde al contenido activo
+  const recents = createRecents();
 
   stage.onRender(() => ui.renderGpu(stage.memory()));
 
+  /** Guarda en el historial los ajustes vigentes del contenido activo. */
+  function capture() {
+    if (!current || !view || !media) return;
+    const settings = view.snapshot
+      ? view.snapshot()
+      : { values: calibration.values(), time: media.kind === 'video' ? media.element.currentTime : 0 };
+    recents.update(current, settings);
+  }
+
   function release() {
+    capture();
+    current = null;
+    stage.setLens(null);
     view?.dispose();
     media?.release();
     view = null;
@@ -54,6 +69,7 @@ export function createSession({ store, stage, ui, calibration }) {
     ui.renderEyes(Boolean(values.swap));
     if (media?.kind === 'pair') ui.el.meta.layout.textContent = PAIR_LAYOUT[media.layout] ?? 'Par';
     else ui.renderLayout(detected ? values.layout : null, detected);
+    if ('lens' in values) stage.setLens(values.lens ? { strength: values.lensStrength, chroma: values.lensChroma } : null);
   }
 
   function selectModule(id) {
@@ -84,7 +100,7 @@ export function createSession({ store, stage, ui, calibration }) {
    * Carga genérica: `loader` valida y decodifica (importer.js o las fuentes del editor)
    * y devuelve un objeto media con release(). Aquí se sustituye el contenido anterior.
    */
-  async function load(loader, name) {
+  async function load(loader, name, { restore = null } = {}) {
     const module = MODULES[store.get().module];
     if (!module) {
       ui.showError('Primero elige un módulo', 'Selecciona Anaglifo, Imagen SBS, Video SBS o Editor estéreo y después importa el archivo.');
@@ -125,6 +141,16 @@ export function createSession({ store, stage, ui, calibration }) {
     ui.renderMeta(media);
     store.set({ media, status: STATUS.READY, pendingName: null });
 
+    if (restore) {
+      // Se leen los ajustes después de release(): si era el mismo contenido, ya están actualizados.
+      current = restore;
+      recents.touch(restore);
+      applySettings(restore.settings);
+      ui.message(`${media.name} restaurado del historial con sus ajustes.`);
+      return;
+    }
+    current = recents.add({ module: module.id, name: media.name, key: `${media.name}|${media.size}`, reopen: loader });
+
     const aspect = media.width / media.height;
     if (module.render === 'split' && aspect < 1.3) {
       ui.message(`${media.name} está abierto, pero su proporción (${aspect.toFixed(2)}:1) no parece SBS. Comprueba que contenga dos vistas lado a lado.`);
@@ -132,6 +158,23 @@ export function createSession({ store, stage, ui, calibration }) {
       const notes = media.notes?.length ? ` ${media.notes.join(' ')}` : '';
       ui.message(`${media.name} abierto en ${module.label}. Ajustes en valores iniciales.${notes}`);
     }
+  }
+
+  function applySettings(settings) {
+    if (!settings) return;
+    if (view.restore) {
+      view.restore(settings);
+      return;
+    }
+    calibration.restore(settings.values);
+    if (settings.time && media.kind === 'video') media.element.currentTime = settings.time;
+  }
+
+  /** Vuelve a abrir una carga del historial con los ajustes que tenía. */
+  function restoreEntry(entry) {
+    if (store.get().status === STATUS.LOADING) return;
+    capture();
+    return load(entry.reopen, entry.name, { restore: entry });
   }
 
   function open(file) {
@@ -206,6 +249,10 @@ export function createSession({ store, stage, ui, calibration }) {
   return {
     selectModule, load, open, openFiles, openSample, close, reset, apply, togglePlayback, exportCalibration,
     setVR(on) { view?.setVR?.(on); },
+    recents,
+    restoreEntry,
+    /** Actualiza el historial con los ajustes actuales (antes de mostrarlo). */
+    captureNow: capture,
     attachEditor(ctx) { editor = ctx; },
   };
 }

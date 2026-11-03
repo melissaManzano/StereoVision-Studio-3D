@@ -23,7 +23,7 @@ export function formatTime(seconds) {
 export function createVideoView(stage, media, ui, hooks) {
   const video = media.element;
   const texture = new THREE.VideoTexture(video);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.colorSpace = THREE.NoColorSpace;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;

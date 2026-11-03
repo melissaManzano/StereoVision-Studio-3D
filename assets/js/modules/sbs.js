@@ -9,13 +9,18 @@ export function detectLayout(width, height) {
   return width / height >= FULL_SBS_MIN_ASPECT ? 'full' : 'half';
 }
 
+// Muestra la textura tal cual (valores sRGB, sin conversión de color), igual que el anaglifo
+// y el editor: así la pasada de lente Cardboard puede copiar el ojo sin alterar el color.
+const VERTEX = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
+const FRAGMENT = 'uniform sampler2D map; varying vec2 vUv; void main() { gl_FragColor = vec4(texture2D(map, vUv).rgb, 1.0); }';
+
 /**
  * Par estereoscópico: dos planos que comparten UNA textura y recortan su mitad por UV.
  * Se dibujan en las escenas izquierda y derecha del stage. Compartir la textura
  * garantiza que en video ambos ojos muestran exactamente el mismo fotograma.
  */
 export function createStereoPair(stage, texture, sourceWidth, sourceHeight) {
-  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const material = new THREE.ShaderMaterial({ uniforms: { map: { value: texture } }, vertexShader: VERTEX, fragmentShader: FRAGMENT });
   const geometries = { left: halfGeometry('left', sourceWidth), right: halfGeometry('right', sourceWidth) };
   const meshLeft = new THREE.Mesh(geometries.left, material);
   const meshRight = new THREE.Mesh(geometries.right, material);
@@ -63,7 +68,7 @@ export function createStereoPair(stage, texture, sourceWidth, sourceHeight) {
 /** Imagen SBS: textura estática + par estereoscópico. */
 export function createSbsImageView(stage, media) {
   const texture = new THREE.Texture(media.element);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.colorSpace = THREE.NoColorSpace;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;

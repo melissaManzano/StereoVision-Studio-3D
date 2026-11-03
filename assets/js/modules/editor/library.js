@@ -42,7 +42,8 @@ export function createLibrary({ el, load, worker, renderer, ui, currentMedia }) 
     lastSingle = isMpo(file) ? null : file;
     activeIndex = -1;
     renderList();
-    return load(() => loadSingle(file, el.singleLayout.value, { worker, maxSize: maxSize() }), file.name);
+    const layout = el.singleLayout.value; // se fija aquí para que el historial reabra con la misma disposición
+    return load(() => loadSingle(file, layout, { worker, maxSize: maxSize() }), file.name);
   }
 
   function tryPair() {
@@ -59,7 +60,8 @@ export function createLibrary({ el, load, worker, renderer, ui, currentMedia }) 
   }
 
   function entryLoader(entry) {
-    if (entry.single) return () => loadSingle(entry.single, el.singleLayout.value, { worker, maxSize: maxSize() });
+    const layout = el.singleLayout.value;
+    if (entry.single) return () => loadSingle(entry.single, layout, { worker, maxSize: maxSize() });
     return () => loadPair(entry.left, entry.right, { maxSize: maxSize() });
   }
 
@@ -125,7 +127,8 @@ export function createLibrary({ el, load, worker, renderer, ui, currentMedia }) 
     const label = el.singleLayout.selectedOptions[0].textContent.toLowerCase();
     if (lastSingle && media?.kind === 'pair' && media.name === lastSingle.name) {
       const file = lastSingle;
-      load(() => loadSingle(file, el.singleLayout.value, { worker, maxSize: maxSize() }), `${file.name} (${label})`);
+      const layout = el.singleLayout.value;
+      load(() => loadSingle(file, layout, { worker, maxSize: maxSize() }), `${file.name} (${label})`);
     } else if (media?.kind === 'pair') {
       ui.message(`La disposición solo aplica a imágenes únicas; el contenido actual ya son dos vistas. Se usará "${label}" en la próxima imagen única.`);
     } else {
