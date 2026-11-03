@@ -53,9 +53,9 @@ function init() {
   el.modes.forEach((button) => button.addEventListener('click', () => session.selectModule(button.dataset.module)));
   el.importBtn.addEventListener('click', () => el.fileInput.click());
   el.fileInput.addEventListener('change', () => {
-    const file = el.fileInput.files?.[0];
+    const files = [...(el.fileInput.files ?? [])];
     el.fileInput.value = ''; // permite volver a elegir el mismo archivo
-    if (file) session.open(file);
+    session.openFiles(files);
   });
   el.sampleBtn.addEventListener('click', () => session.openSample());
   el.closeBtn.addEventListener('click', () => session.close());

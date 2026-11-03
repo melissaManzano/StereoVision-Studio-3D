@@ -20,7 +20,7 @@ body { font-size: var(--text-md); }
 
 /* ---------- Shell ---------- */
 /* On desktop the studio is exactly one viewport tall: panels scroll, the stage never grows past the screen. */
-.app { height: 100dvh; display: grid; grid-template-rows: var(--topbar-h) minmax(0, 1fr); }
+.app { height: 100dvh; display: grid; grid-template-rows: var(--topbar-h) minmax(0, 1fr) auto; }
 
 .topbar {
   display: flex; align-items: center; gap: var(--space-lg);
@@ -299,6 +299,15 @@ body { font-size: var(--text-md); }
   position: absolute; inset: 0; z-index: var(--z-modal); padding: var(--space-xl); text-align: center; background: var(--color-scrim);
 }
 
+/* ---------- Footer ---------- */
+.footer {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs) var(--space-md);
+  padding: var(--space-xs) var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule);
+  background: var(--color-paper); color: var(--color-muted); font-size: var(--text-xs);
+}
+.footer span + span { padding-left: var(--space-md); border-left: var(--rule-hair) solid var(--color-rule-2); }
+.app.is-vr .footer { display: none; }
+
 .noscript { padding: var(--space-lg); }
 
 /* ---------- Responsive ---------- */
@@ -309,7 +318,7 @@ body { font-size: var(--text-md); }
 
 @media (max-width: 60rem) {
   :root { --topbar-h: auto; }
-  .app { height: auto; min-height: 100dvh; grid-template-rows: auto minmax(0, 1fr); }
+  .app { height: auto; min-height: 100dvh; grid-template-rows: auto minmax(0, 1fr) auto; }
   .topbar { flex-wrap: wrap; padding: var(--space-sm) var(--space-md); gap: var(--space-sm); }
   .wordmark span { display: inline; }
   .modes { order: 3; width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -331,6 +340,10 @@ body { font-size: var(--text-md); }
 /* The import panel leads on a phone once nothing is open, so the first action is in reach. */
 @media (max-width: 60rem) {
   .app:not(.has-content) .studio { grid-template-areas: "import" "viewer" "tools"; }
+  /* The editor's tool panel is long: keep its import options right under the stage. */
+  .app.is-editor.has-content .studio { grid-template-areas: "viewer" "import" "tools"; }
+  .footer { flex-direction: column; align-items: flex-start; padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); }
+  .footer span + span { padding-left: 0; border-left: 0; }
 }
 
 @media (max-width: 40rem) {

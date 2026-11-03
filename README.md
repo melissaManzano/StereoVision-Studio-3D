@@ -2,6 +2,7 @@
 
 Aplicación web tipo *Studio* para **importar, calibrar y visualizar** imágenes anaglifo rojo-cian, imágenes estereoscópicas Side-by-Side (SBS) y videos SBS 3D, con un **modo VR para celular** compatible con gafas tipo Cardboard, y un **Editor estéreo** para alinear, recortar, igualar y exportar pares de fotografías 3D.
 
+- **Autora:** Claudia Melissa Manzano Luna, Instituto Tecnológico de Pachuca, 2026
 - **Sitio publicado (HTTPS):** `https://<usuario>.github.io/StereoVision-Studio-3D/` *(actualizar tras publicar)*
 - **Repositorio:** `https://github.com/<usuario>/StereoVision-Studio-3D`
 - **Tecnologías:** HTML, CSS y JavaScript con módulos ES, Three.js r180 (importmap desde jsDelivr) y Web Workers, sin frameworks, backend ni base de datos. El procesamiento de imagen (rasgos, RANSAC, histogramas, TIFF, GIF, ZIP) está escrito desde cero, sin librerías.

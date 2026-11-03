@@ -1,5 +1,6 @@
 import { MODULES, STATUS_LABEL } from './state.js';
 import { FORMATS } from './importer.js';
+import { SINGLE_ACCEPT } from './editor/sources.js';
 import { formatTime } from './video.js';
 
 /**
@@ -130,14 +131,16 @@ export function createUI(doc = document) {
 
     const isEditor = state.module === 'editor';
     el.editorImport.hidden = !isEditor;
-    el.importBtn.hidden = isEditor;
     el.editorImport.querySelectorAll('button, select').forEach((n) => { n.disabled = busy; });
+    // En el editor, Importar acepta una imagen (SBS, arriba/abajo o MPO) o dos (par izquierda/derecha).
+    el.fileInput.multiple = isEditor;
 
     if (isEditor) {
+      el.fileInput.accept = SINGLE_ACCEPT;
       el.formats.textContent = 'Formatos: JPG, PNG o WebP; imagen única también en MPO.';
       el.importHint.textContent = hasContent
-        ? 'Abrir otro par sustituye al actual y restablece la receta.'
-        : 'Abre dos vistas, una imagen única (lado a lado, arriba/abajo o MPO) o una carpeta.';
+        ? 'Importar otra imagen sustituye el par actual y restablece la receta.'
+        : 'Importa tu imagen lado a lado o MPO, o selecciona dos imágenes a la vez (izquierda y derecha).';
     } else if (module) {
       const f = FORMATS[module.kind];
       el.fileInput.accept = f.accept;
