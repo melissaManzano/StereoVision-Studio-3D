@@ -3,8 +3,8 @@
 Aplicación web tipo *Studio* para **importar, calibrar y visualizar** imágenes anaglifo rojo-cian, imágenes estereoscópicas Side-by-Side (SBS) y videos SBS 3D, con un **modo VR para celular** compatible con gafas tipo Cardboard, y un **Editor estéreo** para alinear, recortar, igualar y exportar pares de fotografías 3D.
 
 - **Autora:** Claudia Melissa Manzano Luna, Instituto Tecnológico de Pachuca, 2026
-- **Sitio publicado (HTTPS):** `https://<usuario>.github.io/StereoVision-Studio-3D/` *(actualizar tras publicar)*
-- **Repositorio:** `https://github.com/<usuario>/StereoVision-Studio-3D`
+- **Sitio publicado (HTTPS):** https://melissamanzano.github.io/StereoVision-Studio-3D/
+- **Repositorio:** https://github.com/melissaManzano/StereoVision-Studio-3D
 - **Tecnologías:** HTML, CSS y JavaScript con módulos ES, Three.js r180 (importmap desde jsDelivr) y Web Workers, sin frameworks, backend ni base de datos. El procesamiento de imagen (rasgos, RANSAC, histogramas, TIFF, GIF, ZIP) está escrito desde cero, sin librerías.
 
 ---
@@ -169,7 +169,7 @@ Se necesita conexión a Internet para cargar Three.js (jsDelivr) y la fuente Mon
 2. **Importa** con *Importar archivo*, arrastra el archivo al visor o usa *Abrir muestra*.
 3. **Ajusta** en el panel *Ajustes*. Cada cambio se ve al instante y el valor aparece junto a su control. *Restablecer* vuelve a los valores iniciales.
 4. **Historial:** el botón *Historial* del panel *Contenido* lista las últimas 5 cargas del módulo activo, con la hora y un resumen de sus ajustes. Al elegir una, se vuelve a abrir con esos ajustes (en video, en el mismo segundo y en pausa; en el editor, con su receta completa). Solo guarda la referencia al archivo y los ajustes, nunca la imagen cargada, y se pierde al recargar la página. Cambiar de módulo sigue cerrando el archivo actual (RN-05).
-5. **Video:** reproduce siempre con un toque o clic (los navegadores móviles lo exigen). Puedes ajustar el desplazamiento y la escala mientras el video avanza.
+5. **Video:** reproduce siempre con un toque o clic (los navegadores móviles lo exigen) y se repite en bucle hasta que lo pauses. Puedes ajustar el desplazamiento y la escala mientras el video avanza.
 6. **Modo VR** (Imagen SBS y Video SBS): gira el teléfono a horizontal y colócalo en las gafas. En video, tocar la pantalla reproduce o pausa. *Salir de VR* (botón superior) o `Esc` devuelven al Studio con el mismo archivo y los mismos ajustes.
 
 | Control | Módulo | Rango | Inicial |
@@ -360,7 +360,7 @@ Antes de entregar se ejecutó una **prueba automatizada** en Chrome headless (es
 
 1. Crea el repositorio público `StereoVision-Studio-3D` y sube el contenido manteniendo `index.html` en la raíz.
 2. **Settings → Pages → Build and deployment → Source: Deploy from a branch**, rama `main`, carpeta `/ (root)`.
-3. Espera el despliegue y abre `https://<usuario>.github.io/StereoVision-Studio-3D/`.
+3. Espera el despliegue y abre https://melissamanzano.github.io/StereoVision-Studio-3D/.
 4. Revisa Console y Network (P-09) en escritorio y teléfono.
 
 ---

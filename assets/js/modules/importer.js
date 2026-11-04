@@ -105,7 +105,7 @@ async function decodeVideo(file) {
   video.setAttribute('webkit-playsinline', '');
   video.preload = 'auto';
   video.crossOrigin = 'anonymous';
-  video.loop = false;
+  video.loop = true; // al terminar vuelve a empezar; el inicio siempre lo decide el usuario (RN-18)
   video.volume = 0.8;
   // El elemento vive en el documento (fuera de vista) para que iOS lo reproduzca en línea.
   video.className = 'visually-hidden';
